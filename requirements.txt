@@ -1,0 +1,12 @@
+gymnasium
+stable-baselines3[extra]
+torch
+numpy
+scipy
+pandas
+pygame
+tensorboard
+typer
+tqdm
+rich
+opencv-python
