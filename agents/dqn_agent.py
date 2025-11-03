@@ -1,6 +1,6 @@
 # agents/dqn_agent.py
 from __future__ import annotations
-from stable-baselines3 import DQN
+from stable_baselines3 import DQN
 
 def crear_dqn(env, tensorboard_log: str | None = "logs/tb", lr: float = 2.5e-4,
               buffer_size: int = 100_000, batch_size: int = 64, gamma: float = 0.99,
