@@ -27,7 +27,15 @@ def patch_egocentrico(track: GridTrack, x_c: float, y_c: float, ancho: int, alto
 
     # One-hot 6 canales
     C = 6
+    """
+    
     oh = np.zeros((C, alto, ancho), dtype=np.float32)
     for c in range(C):
         oh[c] = (patch == c).astype(np.float32)
-    return oh
+    return oh """
+
+    oh = np.zeros((6, alto, ancho), dtype=np.float32)
+    for c in range(6):
+        oh[c] = (patch == c).astype(np.float32)
+    oh_hwc = np.transpose(oh, (1, 2, 0)).astype(np.float32)  # -> (H, W, C)
+    return oh_hwc
