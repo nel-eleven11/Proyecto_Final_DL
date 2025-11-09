@@ -31,11 +31,10 @@ rl_racer/
 ## Ejecución rápida
 ```bash
 pip install -r requirements.txt
-python scripts/train.py --timesteps 200000 --render-every 0
-# Luego visualizar
-python scripts/visualize.py --modelo models/dqn_track01.zip --episodios 5 --render True
-```
 
-> Nota: Por simplicidad inicial, el coche está orientado hacia la derecha (eje X creciente) y el **patch egocéntrico** mira hacia adelante. 
-Dimensiones del coche en el grid: **largo_x = 2**, **alto_y = 4** unidades (ajustable en `racing_env.py`). 
-Si quieres 4×6 u otras dimensiones, cambia `CAR_LARGO_X` y `CAR_ALTO_Y` y el `PIXELS_POR_UNIDAD` en el renderer.
+# Entrenar al agente
+python scripts/train.py   --csv tracks/TRACK.csv   --timesteps N  --modelo-out models/MODELO.zip
+
+#Visualizar al agente ya entrenado
+python scripts/visualize.py --csv tracks/TRACK.csv --modelo models/MODELO1.zip --render True
+```
