@@ -10,9 +10,22 @@ def main():
     parser.add_argument("--modelo", type=str, default="models/dqn_track01.zip")
     parser.add_argument("--episodios", type=int, default=3)
     parser.add_argument("--render", type=bool, default=True)
+    parser.add_argument("--ppu", type=int, default=36, help="Píxeles por unidad en renderer")
+    parser.add_argument("--fps", type=int, default=30, help="FPS de visualización")
+    parser.add_argument("--speed-scale", type=float, default=0.4, help="Escala de velocidad SOLO visual (0.1..1.0)")
+
     args = parser.parse_args()
 
-    env = RacingEnv(ruta_csv=args.csv, patch_h=11, patch_w=11, render_mode=("human" if args.render else None))
+    env = RacingEnv(
+        ruta_csv=args.csv, 
+        patch_h=11, 
+        patch_w=11, 
+        render_mode=("human" if args.render else None),
+        renderer_ppu=args.ppu, 
+        render_fps=args.fps
+    )
+    env.set_visual_speed_scale(args.speed_scale)
+    env.set_render_fps(args.fps)
     model = DQN.load(args.modelo, env=env)
 
     for ep in range(args.episodios):
