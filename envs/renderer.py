@@ -24,7 +24,7 @@ def color_de_tile(t: int):
     }.get(t, (255, 255, 255))
 
 class Renderer:
-    def __init__(self, pix_por_unidad: int = 20):
+    def __init__(self, pix_por_unidad: int = 36):
         pygame.init()
         self.ppu = int(pix_por_unidad)
         self.screen = None
