@@ -14,7 +14,7 @@ class RacingEnv(gym.Env):
     """Entorno de carrera con orientación fija al ESTE (+X) y progreso normalizado hacia meta."""
     metadata = {"render_modes": ["human", "rgb_array"]}
 
-    def __init__(self, ruta_csv: str, patch_h: int = 13, patch_w: int = 13,
+    def __init__(self, ruta_csv: str, patch_h: int = 11, patch_w: int = 11,
                  render_mode: str | None = None, renderer_ppu: int = 36, render_fps: int = 60):
         super().__init__()
         self.track = GridTrack.from_csv(ruta_csv)

@@ -18,8 +18,8 @@ def main():
 
     env = RacingEnv(
         ruta_csv=args.csv,
-        patch_h=13,
-        patch_w=13,
+        patch_h=11,
+        patch_w=11,
         render_mode=("human" if args.render else None),
         renderer_ppu=args.ppu,
         render_fps=args.fps

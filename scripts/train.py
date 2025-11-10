@@ -20,7 +20,7 @@ class RenderPreviewCallback(BaseCallback):
 
     def _on_step(self) -> bool:
         if self.n_calls % self.every_n_steps == 0:
-            env = RacingEnv(ruta_csv=args.csv, patch_h=13, patch_w=13, render_mode=None)
+            env = RacingEnv(ruta_csv=args.csv, patch_h=11, patch_w=11, render_mode=None)
             env.set_visual_speed_scale(self.speed_scale)
             obs, _ = env.reset()
             done, trunc = False, False
@@ -109,7 +109,7 @@ def main():
     args = parser.parse_args()
 
     set_seed(args.seed)
-    env = RacingEnv(ruta_csv=args.csv, patch_h=13, patch_w=13, render_mode=None)
+    env = RacingEnv(ruta_csv=args.csv, patch_h=11, patch_w=11, render_mode=None)
     env = Monitor(env)
 
     # Si hay muchos timesteps, reducimos verbosidad y solo mostramos RESUMEN final
