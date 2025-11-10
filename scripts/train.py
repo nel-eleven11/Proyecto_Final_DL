@@ -35,7 +35,7 @@ class RenderPreviewCallback(BaseCallback):
 
 def main():
     parser = argparse.ArgumentParser(description="Entrenamiento DQN para pista CSV")
-    parser.add_argument("--csv", type=str, default="tracks/track01_recta.csv", help="Ruta a la pista CSV")
+    parser.add_argument("--csv", type=str, default="tracks/track01.csv", help="Ruta a la pista CSV")
     parser.add_argument("--timesteps", type=int, default=200_000, help="Pasos totales de entrenamiento")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--render-every", type=int, default=0, help="Si >0, renderiza cada N steps (costo alto)")

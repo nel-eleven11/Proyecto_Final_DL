@@ -6,7 +6,7 @@ from envs.racing_env import RacingEnv
 
 def main():
     parser = argparse.ArgumentParser(description="Reproducir episodios con un modelo DQN entrenado")
-    parser.add_argument("--csv", type=str, default="tracks/track01_recta.csv")
+    parser.add_argument("--csv", type=str, default="tracks/track01.csv")
     parser.add_argument("--modelo", type=str, default="models/dqn_track01.zip")
     parser.add_argument("--episodios", type=int, default=3)
     parser.add_argument("--render", type=bool, default=True)

@@ -7,7 +7,7 @@ from gymnasium.spaces import Box
 from stable_baselines3 import DQN
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
-def crear_dqn(
+def crear_dqn2(
     env, 
     tensorboard_log: str | None = "logs/tb", 
     lr: float = 2.5e-4,
@@ -74,7 +74,7 @@ class CNN6CExtractor(BaseFeaturesExtractor):
         x = self.linear(x)
         return x
 
-def crear_dqn2(
+def crear_dqn(
     env,
     tensorboard_log: str | None = "logs/tb",
     lr: float = 2.5e-4,
