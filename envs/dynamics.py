@@ -11,7 +11,7 @@ class DinamicaCoche:
     - Las acciones discretas controlan aceleración y desplazamiento lateral.
     - La velocidad es en unidades de grid por paso.
     """
-    def __init__(self, v_max: float = 2.0, aceleracion: float = 0.1, frenado: float = 0.3):
+    def __init__(self, v_max: float = 2.0, aceleracion: float = 0.2, frenado: float = 0.3):
         self.v_max = float(v_max)
         self.acel = float(aceleracion)
         self.freno = float(frenado)

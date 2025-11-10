@@ -11,21 +11,21 @@ from dataclasses import dataclass
 # 3 -> aceite (negro)   (reduce velocidad 10%)
 # 4 -> terracería       (reduce velocidad 5%)
 # 5 -> boost (azul)     (aumenta temporalmente +5%)
+# 6 -> salida 'S' (blanco)
+# 7 -> meta   'M' (ajedrez blanco/negro)
 
-TILE_PAVIMENTO = 0
-TILE_MURO = 1
-TILE_AFUERAS = 2
-TILE_ACEITE = 3
+TILE_PAVIMENTO  = 0
+TILE_MURO       = 1
+TILE_AFUERAS    = 2
+TILE_ACEITE     = 3
 TILE_TERRACERIA = 4
-TILE_BOOST = 5
+TILE_BOOST      = 5
+TILE_SALIDA     = 6
+TILE_META       = 7
 
 @dataclass
 class GridTrack:
-    """Carga y expone una pista desde un CSV.
-
-    El CSV debe contener enteros en {0..5}. 
-    Se asume que el coche inicia cerca del borde izquierdo sobre pavimento.
-    """
+    """Carga y expone una pista desde un CSV que puede contener enteros o tokens 'S'/'M'."""
     grid: np.ndarray  # (alto, ancho) con ints de tiles
 
     @classmethod
@@ -36,14 +36,19 @@ class GridTrack:
             for row in reader:
                 if not row:
                     continue
-                # limpiar espacios por si los hay
-                fila = [int(x.strip()) for x in row if x is not None and x.strip() != ""]
+                fila = []
+                for x in row:
+                    tok = x.strip()
+                    if tok.upper() == 'S':
+                        fila.append(TILE_SALIDA)
+                    elif tok.upper() == 'M':
+                        fila.append(TILE_META)
+                    else:
+                        fila.append(int(tok))
                 filas.append(fila)
-
         grid = np.array(filas, dtype=np.int32)
         assert grid.ndim == 2, "El CSV debe tener forma 2D (alto × ancho)"
         return cls(grid=grid)
-
 
     @property
     def alto(self) -> int:
@@ -60,18 +65,44 @@ class GridTrack:
         return int(self.grid[y, x])
 
     def rect_toca_muro(self, x_min: float, y_min: float, x_max: float, y_max: float) -> bool:
-        """Verifica si un rectángulo en coordenadas de unidad del grid toca alguna celda MURO.
-        Aproximación: muestreamos celdas cubiertas por el rectángulo y buscamos TILE_MURO.
-        """
-        # Convertimos a celdas (enteros) con margen
+        """¿El rectángulo toca algún MURO? (muestreo por celdas cubiertas)"""
         xi0 = int(np.floor(x_min))
         yi0 = int(np.floor(y_min))
         xi1 = int(np.ceil(x_max))
         yi1 = int(np.ceil(y_max))
-        for yi in range(yi0, yi1+1):
-            for xi in range(xi0, xi1+1):
+        for yi in range(yi0, yi1 + 1):
+            for xi in range(xi0, xi1 + 1):
                 if self.tile_en(yi, xi) == TILE_MURO:
-                    # Chequeo extra por si el rect no llega realmente a cubrir la celda completa,
-                    # para simplicidad lo consideramos colisión si toca la celda.
                     return True
         return False
+
+    def rect_toca_meta(self, x_min: float, y_min: float, x_max: float, y_max: float) -> bool:
+        """¿El rectángulo toca alguna casilla de META?"""
+        xi0 = int(np.floor(x_min))
+        yi0 = int(np.floor(y_min))
+        xi1 = int(np.ceil(x_max))
+        yi1 = int(np.ceil(y_max))
+        for yi in range(yi0, yi1 + 1):
+            for xi in range(xi0, xi1 + 1):
+                if self.tile_en(yi, xi) == TILE_META:
+                    return True
+        return False
+
+    def spawn_desde_salida(self, car_largo_x: float, car_alto_y: float) -> tuple[float, float]:
+        """Calcula el (x,y) inicial:
+        - Asume EXACTAMENTE 2 casillas 'S' apiladas verticalmente en la MISMA columna.
+        - El coche mira al ESTE y su PARTE TRASERA se coloca en el borde izquierdo de esas 'S'.
+        - El centro (y) del coche se fija a la mitad entre ambas 'S'.
+        """
+        ys, xs = np.where(self.grid == TILE_SALIDA)
+        assert len(xs) == 2, "La pista debe contener exactamente 2 casillas 'S' de salida."
+        # Verificar misma columna
+        assert xs[0] == xs[1], "Las casillas 'S' deben estar en la misma columna."
+        col = int(xs[0])
+        y_min, y_max = int(min(ys)), int(max(ys))
+        # Centro vertical entre ambas S 
+        y_c = (y_min + y_max + 1) / 2.0
+        # Parte trasera en el borde izquierdo de S => rear_x = col
+        # Centro = rear_x + car_largo_x/2
+        x_c = float(col) + car_largo_x / 2.0
+        return x_c, y_c
