@@ -34,7 +34,10 @@ pip install -r requirements.txt
 
 # Entrenar al agente
 python scripts/train.py   --csv tracks/TRACK.csv   --timesteps N  --modelo-out models/MODELO.zip
+python -m scripts.train --csv tracks/track01.csv --timesteps 10000 --modelo-out models/dqn_track01.zip
+
 
 #Visualizar al agente ya entrenado
 python scripts/visualize.py --csv tracks/TRACK.csv --modelo models/MODELO1.zip --render True
+python -m scripts.visualize --csv tracks/track01.csv --modelo models/dqn_track01.zip --episodios 5 --render True
 ```

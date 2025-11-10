@@ -9,6 +9,6 @@ target_update_interval: 1000
 exploration_fraction: 0.3
 exploration_final_eps: 0.05
 total_timesteps: 200000
-patch_h: 11
-patch_w: 11
-canales: 6  # 0..5 (pavimento, muro, afueras, aceite, terracería, boost)
+patch_h: 13
+patch_w: 13
+canales: 8  # 0..5 (pavimento, muro, afueras, aceite, terracería, boost)

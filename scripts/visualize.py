@@ -17,13 +17,14 @@ def main():
     args = parser.parse_args()
 
     env = RacingEnv(
-        ruta_csv=args.csv, 
-        patch_h=11, 
-        patch_w=11, 
+        ruta_csv=args.csv,
+        patch_h=13,
+        patch_w=13,
         render_mode=("human" if args.render else None),
-        renderer_ppu=args.ppu, 
+        renderer_ppu=args.ppu,
         render_fps=args.fps
     )
+
     env.set_visual_speed_scale(args.speed_scale)
     env.set_render_fps(args.fps)
     model = DQN.load(args.modelo, env=env)

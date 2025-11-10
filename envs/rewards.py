@@ -3,26 +3,33 @@ from __future__ import annotations
 import numpy as np
 
 class Recompensa:
-    """Funciones de shaping para el entorno de carrera."""
-    def __init__(self, k_progreso: float = 1.0, k_tiempo: float = 0.01, k_desvio: float = 0.02, r_choque: float = 5.0, r_meta: float = 20.0):
+    """Shaping de recompensas:
+    - Progreso normalizado hacia meta (Δdist / dist_inicial)
+    - Penalización por tiempo
+    - Castigo por choque
+    - Bonus por meta
+    """
+    def __init__(self, k_progreso: float = 1.0, k_tiempo: float = 0.01,
+                 r_choque: float = 5.0, r_meta: float = 20.0):
         self.k_progreso = k_progreso
         self.k_tiempo = k_tiempo
-        self.k_desvio = k_desvio
         self.r_choque = r_choque
         self.r_meta = r_meta
+        self.dist_inicial = 1.0  # se setea en reset
 
-    def paso(self, x_prev: float, x_act: float, offset_centro: float, choco: bool, llego_meta: bool) -> float:
-        r = 0.0
-        # Progreso hacia la derecha
-        r += self.k_progreso * max(0.0, (x_act - x_prev))
-        # Penalización por tiempo (cada paso cuesta)
+    def set_dist_inicial(self, d0: float):
+        self.dist_inicial = max(1e-6, float(d0))
+
+    def paso(self, dist_prev: float, dist_act: float, choco: bool, llego_meta: bool) -> float:
+        # Progreso normalizado hacia meta 
+        delta = (dist_prev - dist_act) / self.dist_inicial
+        r = self.k_progreso * delta
+        # Costo por tiempo/paso
         r -= self.k_tiempo
-        # Penalización por desviarse del centro del carril (offset absoluto)
-        r -= self.k_desvio * abs(offset_centro)
-        # Choque contra muro
+        # Choque
         if choco:
             r -= self.r_choque
-        # Bonus por cruzar meta
+        # Bonus por meta
         if llego_meta:
             r += self.r_meta
         return r

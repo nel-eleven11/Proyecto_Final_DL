@@ -88,6 +88,11 @@ class GridTrack:
                     return True
         return False
 
+    def centros_meta(self) -> list[tuple[float, float]]:
+        """Devuelve centros (x+0.5, y+0.5) de todas las casillas META."""
+        ys, xs = np.where(self.grid == TILE_META)
+        return [(float(x) + 0.5, float(y) + 0.5) for y, x in zip(ys, xs)]
+
     def spawn_desde_salida(self, car_largo_x: float, car_alto_y: float) -> tuple[float, float]:
         """Calcula el (x,y) inicial:
         - Asume EXACTAMENTE 2 casillas 'S' apiladas verticalmente en la MISMA columna.
