@@ -1,5 +1,11 @@
 # Proyecto_Final_DL
 
+# Video de YT:
+
+```bash
+https://www.youtube.com/watch?v=DMx1JRllzgo
+```
+
 # RL Racer (DQN)
 
 Este proyecto implementa un entorno tipo pista en cuadriculado (CSV) y un agente **DQN** con Stable-Baselines3.
