@@ -10,15 +10,8 @@ from .sensors import patch_egocentrico
 from .rewards import Recompensa
 from .renderer import Renderer
 
-# 0=E, 1=S, 2=O, 3=N
-def _dims_auto_por_dir(dir_card: int, largo_x: float, alto_y: float) -> tuple[float, float]:
-    # Para N/S intercambiamos dimensiones para el AABB
-    if dir_card in (1, 3):
-        return alto_y, largo_x  # (largo_x_alineado, alto_y_alineado)
-    return largo_x, alto_y
-
 class RacingEnv(gym.Env):
-    """Entorno de carrera con heading cardinal y progreso a meta normalizado."""
+    """Entorno de carrera con orientación fija al ESTE (+X) y progreso normalizado hacia meta."""
     metadata = {"render_modes": ["human", "rgb_array"]}
 
     def __init__(self, ruta_csv: str, patch_h: int = 13, patch_w: int = 13,
@@ -29,21 +22,20 @@ class RacingEnv(gym.Env):
         self.patch_w = int(patch_w)
         self.render_mode = render_mode
 
-        # Coche (tamaño físico en unidades de grid)
+        # Dimensiones físicas del coche (en unidades de grid)
         self.CAR_LARGO_X = 4.0
         self.CAR_ALTO_Y = 2.0
 
-        # Estado
+        # Estado continuo
         self.x = 0.0
         self.y = 0.0
         self.v = 0.0
-        self.dir = 0  # 0=Este
 
         # Dinámica y recompensa
         self.dyn = DinamicaCoche(v_max=2.0, aceleracion=0.2, frenado=0.3)
         self.rew = Recompensa(k_progreso=1.0, k_tiempo=0.01, r_choque=5.0, r_meta=20.0)
 
-        # Observación H×W×C con C=8
+        # Observación H×W×C (C=8 con S y M). El patch sigue “mirando” al Este.
         self.observation_space = spaces.Box(
             low=0.0, high=1.0, shape=(self.patch_h, self.patch_w, 8), dtype=np.float32
         )
@@ -54,7 +46,7 @@ class RacingEnv(gym.Env):
         self.render_fps = int(render_fps)
         self.renderer = Renderer(pix_por_unidad=renderer_ppu) if render_mode == "human" else None
 
-        # Cache meta
+        # Meta
         self._centros_meta = self.track.centros_meta()
         self._dist_init = 1.0
         self._dist_prev = 1.0
@@ -76,49 +68,51 @@ class RacingEnv(gym.Env):
 
     def reset(self, seed: int | None = None, options: dict | None = None):
         super().reset(seed=seed)
+        # Coloca el coche en la salida (mirando al Este)
         self.x, self.y = self.track.spawn_desde_salida(self.CAR_LARGO_X, self.CAR_ALTO_Y)
         self.v = 0.0
-        self.dir = 0  # mirar al Este al inicio
+
+        # Progreso normalizado
         self._dist_init = self._dist_a_meta(self.x, self.y)
         self._dist_prev = self._dist_init
         self.rew.set_dist_inicial(self._dist_init)
-        obs = patch_egocentrico(self.track, self.x, self.y, self.dir, self.patch_w, self.patch_h, back_margin=3)
+
+        # Observación inicial (egocéntrica con “heading” fijo al Este => dir=0)
+        obs = patch_egocentrico(self.track, self.x, self.y, dir_card=0,
+                                ancho=self.patch_w, alto=self.patch_h, back_margin=3)
         return obs, {}
 
     def step(self, action: int):
         steer_idx, throttle_idx = self._accion_a_tuplas(action)
 
-        # Actualizar heading por steering (giro de 90°)
-        if steer_idx == 0:
-            self.dir = (self.dir - 1) % 4
-        elif steer_idx == 2:
-            self.dir = (self.dir + 1) % 4
-
-        # Tile bajo centro para dinámica
+        # Tile bajo el centro (para dinámica)
         tile_y = int(np.clip(np.floor(self.y), 0, self.track.alto - 1))
         tile_x = int(np.clip(np.floor(self.x), 0, self.track.ancho - 1))
         tile_bajo = self.track.tile_en(tile_y, tile_x)
 
-        # Dinámica (avance según heading)
-        x_new, y_new, v_new = self.dyn.actualizar(self.x, self.y, self.v, throttle_idx, tile_bajo, self.dir)
+        # Dinámica (orientación fija al Este)
+        x_new, y_new, v_new = self.dyn.actualizar(
+            self.x, self.y, self.v, steer_idx, throttle_idx, tile_bajo
+        )
 
-        # Mantener dentro de límites en Y (simple)
-        y_new = float(np.clip(y_new, 0.0 + self.CAR_ALTO_Y / 2.0, self.track.alto - self.CAR_ALTO_Y / 2.0))
-        # X también (por si curvas hacia O/este)
-        x_new = float(np.clip(x_new, 0.0 + self.CAR_LARGO_X / 2.0, self.track.ancho - self.CAR_LARGO_X / 2.0))
+        # Limitar a bordes verticales del grid
+        y_new = float(np.clip(y_new, 0.0 + self.CAR_ALTO_Y / 2.0,
+                              self.track.alto - self.CAR_ALTO_Y / 2.0))
+        # Y también en X (por seguridad)
+        x_new = float(np.clip(x_new, 0.0 + self.CAR_LARGO_X / 2.0,
+                              self.track.ancho - self.CAR_LARGO_X / 2.0))
 
-        # Dimensiones AABB según orientación
-        largo_x_eff, alto_y_eff = _dims_auto_por_dir(self.dir, self.CAR_LARGO_X, self.CAR_ALTO_Y)
-        x_min = x_new - largo_x_eff / 2.0
-        x_max = x_new + largo_x_eff / 2.0
-        y_min = y_new - alto_y_eff / 2.0
-        y_max = y_new + alto_y_eff / 2.0
+        # AABB del coche (fijo; no depende de orientación)
+        x_min = x_new - self.CAR_LARGO_X / 2.0
+        x_max = x_new + self.CAR_LARGO_X / 2.0
+        y_min = y_new - self.CAR_ALTO_Y / 2.0
+        y_max = y_new + self.CAR_ALTO_Y / 2.0
 
         # Eventos
         choco = self.track.rect_toca_muro(x_min, y_min, x_max, y_max)
         llego_meta = self.track.rect_toca_meta(x_min, y_min, x_max, y_max)
 
-        # Recompensa por progreso hacia meta
+        # Recompensa por progreso hacia meta (normalizado)
         dist_act = self._dist_a_meta(x_new, y_new)
         r = self.rew.paso(self._dist_prev, dist_act, choco, llego_meta)
         self._dist_prev = dist_act
@@ -126,8 +120,9 @@ class RacingEnv(gym.Env):
         # Aplicar transición
         self.x, self.y, self.v = x_new, y_new, v_new
 
-        # Observación egocéntrica con heading
-        obs = patch_egocentrico(self.track, self.x, self.y, self.dir, self.patch_w, self.patch_h, back_margin=3)
+        # Observación egocéntrica con “heading” fijo al Este (dir=0)
+        obs = patch_egocentrico(self.track, self.x, self.y, dir_card=0,
+                                ancho=self.patch_w, alto=self.patch_h, back_margin=3)
 
         terminated = bool(choco or llego_meta)
         truncated = False
@@ -138,6 +133,7 @@ class RacingEnv(gym.Env):
         return obs, r, terminated, truncated, info
 
     def set_visual_speed_scale(self, escala: float):
+        """Ralentiza/acelera la animación (no afecta aprendizaje)."""
         self.dyn.escala_tiempo = float(max(0.05, escala))
 
     def set_render_fps(self, fps: int):
@@ -146,8 +142,9 @@ class RacingEnv(gym.Env):
     def render(self):
         if self.renderer is None:
             return
+        # Pasamos dir=0 (Este) para dibujar el coche
         self.renderer.draw(self.track.grid, self.x, self.y,
-                           self.CAR_LARGO_X, self.CAR_ALTO_Y, self.dir, fps=self.render_fps)
+                           self.CAR_LARGO_X, self.CAR_ALTO_Y, dir_card=0, fps=self.render_fps)
 
     def close(self):
         if self.renderer is not None:
